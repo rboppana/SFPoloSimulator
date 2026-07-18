@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polo Deal Simulator | Cars on Terms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d2240; --well:#081729; --line:#1e4573;
+    --signal:#e8202a; --gold:#c4a35a; --paper:#eef2f7; --muted:#8fa3bc; --good:#4ea87a;
+    --display:'Montserrat',system-ui,sans-serif;
+    --data:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--paper);font-family:var(--display);
+       -webkit-font-smoothing:antialiased;padding:0 0 80px}
+  .wrap{max-width:1220px;margin:0 auto;padding:0 20px}
+  header{border-bottom:3px solid var(--signal);padding:32px 0 20px;margin-bottom:26px}
+  .eyebrow{font-family:var(--data);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+           color:var(--signal);font-weight:600;margin-bottom:10px}
+  h1{font-size:clamp(28px,4.4vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+  h1 em{font-style:normal;color:var(--gold)}
+  .sub{color:var(--muted);font-size:15px;margin-top:12px;max-width:64ch;line-height:1.5}
+  .verdict{background:var(--well);border:1px solid var(--line);border-left:4px solid var(--gold);
+           padding:22px 24px;margin-bottom:24px}
+  .verdict .label{font-family:var(--data);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .verdict .big{font-family:var(--data);font-size:clamp(32px,6vw,56px);font-weight:600;
+                letter-spacing:-.03em;line-height:1.1;margin:6px 0 6px}
+  .verdict .note{color:var(--muted);font-size:13px;line-height:1.55;max-width:72ch}
+  .verdict .note b{color:var(--paper);font-weight:600}
+  .verdict.absurd{border-left-color:var(--signal)}
+  .cols{display:grid;grid-template-columns:330px 1fr;gap:26px;align-items:start}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+  .panel{background:var(--well);border:1px solid var(--line);padding:18px}
+  .grp{margin-bottom:22px}.grp:last-child{margin-bottom:0}
+  .grp > h2{font-family:var(--data);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+            font-weight:600;padding-bottom:8px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+  .grp.cars > h2{color:var(--paper)} .grp.money > h2{color:var(--signal)} .grp.mine > h2{color:var(--gold)}
+  .fld{margin-bottom:13px}
+  .fld label{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;
+             color:var(--muted);margin-bottom:5px;gap:8px}
+  .fld label .v{font-family:var(--data);font-size:13px;font-weight:500;color:var(--paper)}
+  .grp.mine .fld label .v{color:var(--gold)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;
+                    background:var(--line);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;
+    background:var(--paper);border-radius:50%;cursor:pointer;border:none}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;background:var(--paper);
+    border-radius:50%;cursor:pointer;border:none}
+  .grp.money input[type=range]::-webkit-slider-thumb{background:var(--signal)}
+  .grp.money input[type=range]::-moz-range-thumb{background:var(--signal)}
+  .grp.mine input[type=range]::-webkit-slider-thumb{background:var(--gold)}
+  .grp.mine input[type=range]::-moz-range-thumb{background:var(--gold)}
+  input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+  .seg{display:flex;border:1px solid var(--line);margin-bottom:12px}
+  .seg button{flex:1;background:transparent;border:0;color:var(--muted);cursor:pointer;
+    font-family:var(--data);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    padding:8px 4px;transition:background .15s,color .15s}
+  .seg button[aria-pressed="true"]{background:var(--gold);color:var(--ink);font-weight:600}
+  .seg button:focus-visible{outline:2px solid var(--paper);outline-offset:-2px}
+  .seglab{font-size:11px;color:var(--muted);margin-bottom:5px}
+  .toggle{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);cursor:pointer;padding:5px 0}
+  .toggle input{accent-color:var(--gold);width:15px;height:15px;cursor:pointer}
+  .chartcard{background:var(--well);border:1px solid var(--line);padding:18px 18px 12px;margin-bottom:20px}
+  .chart-hd{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+  .chart-hd h3{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .chart-hd p{font-size:12px;color:var(--muted);margin-top:3px;max-width:52ch;line-height:1.45}
+  .key{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--data);font-size:10.5px}
+  .key span{display:flex;align-items:center;gap:6px;color:var(--muted)}
+  .swatch{width:14px;height:3px;display:inline-block}
+  .swatch.band{height:9px;background:var(--gold);opacity:.32}
+  .swatch.gap{height:9px;background:var(--signal);opacity:.28}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:1px;
+        background:var(--line);border:1px solid var(--line);margin-bottom:20px}
+  .kpi{background:var(--well);padding:14px 15px}
+  .kpi .k{font-family:var(--data);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--muted);margin-bottom:7px;line-height:1.35}
+  .kpi .n{font-family:var(--data);font-size:21px;font-weight:600;letter-spacing:-.02em}
+  .kpi .m{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+  .n.pass{color:var(--good)} .n.fail{color:var(--signal)} .n.mine{color:var(--gold)}
+  .flags{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)}
+  .flag{background:var(--well);padding:13px 15px;display:flex;gap:12px;align-items:flex-start}
+  .flag .dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;margin-top:6px}
+  .flag.bad .dot{background:var(--signal)} .flag.warn .dot{background:var(--gold)} .flag.ok .dot{background:var(--good)}
+  .flag .txt{font-size:12.5px;line-height:1.5;color:var(--muted)}
+  .flag .txt b{color:var(--paper);font-weight:600}
+  .flag.bad .txt b{color:var(--signal)}
+  .flags-hd{font-family:var(--data);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+            color:var(--muted);margin:26px 0 10px}
+  .foot{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);
+        font-size:11.5px;color:var(--muted);line-height:1.6;max-width:82ch}
+  .foot b{color:var(--paper)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Cars on Terms &nbsp;/&nbsp; deal simulator</div>
+  <h1>The rentals pay the bond. The <em>mine</em> compounds in the dark.</h1>
+  <p class="sub">The bond comes out of rental income, so the cars carry it alone. The mine hands you nothing until you exit. Move anything and watch which of the two is actually holding this up.</p>
+</header>
+
+<div class="verdict" id="verdict">
+  <div class="label">What you clear over the full term, both legs</div>
+  <div class="big" id="v-total">R0</div>
+  <div class="note" id="v-note"></div>
+</div>
+
+<div class="cols">
+  <div class="panel" id="controls">
+
+    <div class="grp cars">
+      <h2>The cars</h2>
+      <div class="fld"><label for="veh">Vehicles<span class="v" id="o-veh"></span></label><input type="range" id="veh" min="1" max="100" step="1" value="30"></div>
+      <div class="fld"><label for="acq">Acquisition price each<span class="v" id="o-acq"></span></label><input type="range" id="acq" min="120000" max="450000" step="5000" value="235000"></div>
+      <div class="fld"><label for="book">Book value each<span class="v" id="o-book"></span></label><input type="range" id="book" min="120000" max="500000" step="5000" value="310000"></div>
+      <div class="fld"><label for="fin">Customer contract price<span class="v" id="o-fin"></span></label><input type="range" id="fin" min="120000" max="500000" step="5000" value="315000"></div>
+      <div class="fld"><label for="rent">Monthly rental<span class="v" id="o-rent"></span></label><input type="range" id="rent" min="4000" max="20000" step="250" value="12000"></div>
+      <div class="fld"><label for="dep">Deposit each<span class="v" id="o-dep"></span></label><input type="range" id="dep" min="0" max="60000" step="1000" value="15000"></div>
+      <div class="fld"><label for="term">Term<span class="v" id="o-term"></span></label><input type="range" id="term" min="24" max="84" step="6" value="72"></div>
+    </div>
+
+    <div class="grp money">
+      <h2>What it costs you</h2>
+      <div class="fld"><label for="bondon">Bond taken on<span class="v" id="o-bondon"></span></label><input type="range" id="bondon" min="120000" max="500000" step="5000" value="310000"></div>
+      <div class="fld"><label for="rate">Funding rate<span class="v" id="o-rate"></span></label><input type="range" id="rate" min="0" max="0.30" step="0.005" value="0.13"></div>
+      <div class="fld"><label for="ins">Insurance, a year on value<span class="v" id="o-ins"></span></label><input type="range" id="ins" min="0" max="0.12" step="0.005" value="0.04"></div>
+      <div class="fld"><label for="trk">Tracker a month<span class="v" id="o-trk"></span></label><input type="range" id="trk" min="0" max="1000" step="25" value="250"></div>
+      <div class="fld"><label for="maint">Maintenance reserve a month<span class="v" id="o-maint"></span></label><input type="range" id="maint" min="0" max="2500" step="50" value="0"></div>
+      <div class="fld"><label for="admin">Collections and admin a month<span class="v" id="o-admin"></span></label><input type="range" id="admin" min="0" max="1500" step="50" value="0"></div>
+      <div class="fld"><label for="def">Default rate a year<span class="v" id="o-def"></span></label><input type="range" id="def" min="0" max="0.35" step="0.01" value="0.12"></div>
+      <div class="fld"><label for="res">Residual at end of term<span class="v" id="o-res"></span></label><input type="range" id="res" min="20000" max="200000" step="5000" value="70000"></div>
+      <div class="fld"><label for="recdisc">Discount on forced resale<span class="v" id="o-recdisc"></span></label><input type="range" id="recdisc" min="0" max="0.6" step="0.05" value="0.20"></div>
+    </div>
+
+    <div class="grp mine">
+      <h2>The mine</h2>
+      <div class="seglab">What it does with the money</div>
+      <div class="seg" role="group" aria-label="Mine mode">
+        <button type="button" id="m-comp" aria-pressed="true">Compounds</button>
+        <button type="button" id="m-pay" aria-pressed="false">Pays out monthly</button>
+      </div>
+      <div class="seglab">What 72% a year means</div>
+      <div class="seg" role="group" aria-label="Rate basis">
+        <button type="button" id="b-nom" aria-pressed="true">6.0% a month</button>
+        <button type="button" id="b-eff" aria-pressed="false">72% effective</button>
+      </div>
+      <div class="fld"><label for="gret">Projected return a year<span class="v" id="o-gret"></span></label><input type="range" id="gret" min="0" max="1.5" step="0.02" value="0.72"></div>
+      <div class="fld"><label for="gpaid">Of that, actually achieved<span class="v" id="o-gpaid"></span></label><input type="range" id="gpaid" min="0" max="1" step="0.05" value="1"></div>
+      <div class="fld"><label for="gper">You leave it in for<span class="v" id="o-gper"></span></label><input type="range" id="gper" min="0" max="84" step="3" value="72"></div>
+      <label class="toggle"><input type="checkbox" id="gdep" checked> Put the deposits in too</label>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="chartcard">
+      <div class="chart-hd">
+        <div>
+          <h3>Monthly cash after the bond is paid</h3>
+          <p id="chart-note"></p>
+        </div>
+        <div class="key">
+          <span><i class="swatch" style="background:var(--paper)"></i> Cars alone</span>
+          <span><i class="swatch band"></i> What the mine adds</span>
+          <span><i class="swatch gap"></i> Cash you must find</span>
+        </div>
+      </div>
+      <svg id="chart" viewBox="0 0 860 300" role="img" aria-labelledby="charttitle">
+        <title id="charttitle">Monthly net cash after debt service</title>
+      </svg>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="flags-hd">What the numbers are telling you</div>
+    <div class="flags" id="flags"></div>
+  </div>
+</div>
+
+<p class="foot">
+  <b>Read this before you trust it.</b> Your figures: vehicles, acquisition, book, financed amount, rental, deposit, term,
+  and that the bond is served from rental income while the mine compounds.
+  Your cost stack: bond on R310,000, insurance at 4% a year, tracker at R250 a month. Maintenance and admin start at zero because you did not name them, and both flag below.
+  Placeholders I chose: funding rate, default rate, residual, resale discount. The output is only as good as those.
+  Insurance is charged on the declining sum insured, not flat on R310,000, which is how comprehensive motor cover actually prices. That makes it cheaper over time, and is the friendlier reading.
+  The bond is a level amortising payment across the term. No fees, covenants or tax modelled.
+  Required income assumes a lender's usual one third of net pay rule. The bank comparison prices the same financed amount at the same rate over the same term.
+</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const IDS=["veh","acq","book","fin","rent","dep","term","bondon","rate","ins","trk","maint","admin","def","res","recdisc","gret","gpaid","gper"];
+  const money=n=>(n<0?"-":"")+"R"+Math.round(Math.abs(n)).toLocaleString("en-ZA");
+  const short=n=>{const a=Math.abs(n),s=n<0?"-":"";
+    if(a>=1e9)return s+"R"+(a/1e9).toFixed(2)+"bn";
+    if(a>=1e6)return s+"R"+(a/1e6).toFixed(2)+"m";
+    if(a>=1e3)return s+"R"+Math.round(a/1e3)+"k";
+    return s+"R"+Math.round(a);};
+  const pct=n=>(n*100).toFixed(1)+"%";
+  let mode="compound", basis="nominal";
+
+  function pmt(r,n,pv){if(n<=0)return 0;if(r===0)return pv/n;return pv*r/(1-Math.pow(1+r,-n));}
+  function irr(cf){
+    const f=r=>cf.reduce((a,c,i)=>a+c/Math.pow(1+r,i),0);
+    let lo=-0.9,hi=3.0,flo=f(lo);
+    if(!isFinite(flo)||flo*f(hi)>0)return null;
+    for(let i=0;i<200;i++){const mid=(lo+hi)/2,fm=f(mid);
+      if(flo*fm<=0){hi=mid;}else{lo=mid;flo=fm;}}
+    return (lo+hi)/2;
+  }
+
+  function model(p){
+    const T=p.term, mdr=p.def/12, depr=(p.book-p.res)/T;
+    const cashBack=(p.bondon-p.acq)*p.veh, deposits=p.dep*p.veh;
+    const placed=cashBack+(p.gdep?deposits:0);
+    const hold=Math.min(p.gper,T);
+    const eff=p.gret*p.gpaid;
+    const mr = basis==="nominal" ? eff/12 : Math.pow(1+eff,1/12)-1;
+    const goldMonthly = mode==="payout" ? placed*mr : 0;
+    const terminal = mode==="compound" ? placed*Math.pow(1+mr,hold) : placed;
+    const mineGain = mode==="compound" ? terminal-placed : goldMonthly*hold;
+    const service=pmt(p.rate/12,T,p.bondon*p.veh);
+
+    const live=[],defs=[];live[0]=p.veh;defs[0]=0;
+    for(let m=1;m<=T;m++){live[m]=live[m-1]-defs[m-1];defs[m]=live[m]*mdr;}
+
+    const fo=[],cb=[],un=[];
+    let cumF=0,run=0,gap=0,negSum=0,neg=0,firstNeg=null;
+    for(let m=0;m<=T;m++){
+      const bv=Math.max(p.res,p.book-depr*m);
+      const rentIn=m===0?0:live[m]*p.rent;
+      const rec=defs[m]*bv*(1-p.recdisc);
+      const opOut=m===0?0:live[m]*(bv*p.ins/12+p.trk+p.maint+p.admin);
+      const dsOut=m===0?0:service;
+      const gold=(m===0||m>hold)?0:goldMonthly;
+      const a = m===0 ? 0 : rentIn+rec-opOut-dsOut;
+      const u = m===0 ? deposits-p.acq*p.veh : rentIn+rec-opOut;
+      fo.push(a); cb.push(a+gold); un.push(u);
+      if(m>0){
+        cumF+=a;
+        if(a<0){neg++;negSum+=a;if(firstNeg===null)firstNeg=m;}
+        run=Math.min(0,run+a); gap=Math.min(gap,run);
+      }
+    }
+    const mI=irr(un), aI=mI===null?null:Math.pow(1+mI,12)-1;
+    const probe=Math.min(36,T);
+    const bvP=Math.max(p.res,p.book-depr*probe);
+    const rent36=live[probe]*p.rent, op36=live[probe]*(bvP*p.ins/12+p.trk+p.maint+p.admin);
+    const opex1=p.book*p.ins/12+p.trk+p.maint+p.admin;
+    return {cashBack,deposits,placed,goldMonthly,terminal,mineGain,hold,service,T,
+      fo,cb,cumF,neg,negSum,gap,firstNeg,
+      aIRR:aI,
+      dscrFleet: service>0?(rent36-op36)/service:null,
+      probe,
+      cover: service>0?goldMonthly/service:0,
+      survivors: live[T]-defs[T],
+      perCar: p.rent*T+p.dep, needIncome:p.rent/0.3333,
+      bankPay: pmt(p.rate/12,T,p.bondon), opex1, mr};
+  }
+
+  function draw(r){
+    const svg=$("chart"),W=860,H=300,L=64,R=14,Tp=14,B=30;
+    const fo=r.fo.slice(1), cb=r.cb.slice(1), n=fo.length;
+    const all=fo.concat(cb);
+    let lo=Math.min(0,...all), hi=Math.max(0,...all);
+    const pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
+    const x=i=>L+(i/Math.max(n-1,1))*(W-L-R);
+    const y=v=>Tp+(1-(v-lo)/(hi-lo))*(H-Tp-B);
+    const path=a=>a.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
+    const y0=y(0);
+
+    let g='<defs><clipPath id="cp"><rect x="'+L+'" y="'+Tp+'" width="'+(W-L-R)+'" height="'+(H-Tp-B)+'"/></clipPath>'+
+          '<clipPath id="below"><rect x="'+L+'" y="'+y0.toFixed(1)+'" width="'+(W-L-R)+'" height="'+Math.max(0,H-B-y0).toFixed(1)+'"/></clipPath></defs>';
+
+    for(let i=0;i<=4;i++){
+      const v=lo+(hi-lo)*i/4, yy=y(v);
+      g+='<line x1="'+L+'" y1="'+yy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+yy.toFixed(1)+'" stroke="#1e4573"/>';
+      g+='<text x="'+(L-9)+'" y="'+(yy+4).toFixed(1)+'" fill="#8fa3bc" font-size="10.5" font-family="IBM Plex Mono,monospace" text-anchor="end">'+short(v)+'</text>';
+    }
+    const step=Math.max(6,Math.round(n/12));
+    for(let m=0;m<n;m+=step)
+      g+='<text x="'+x(m).toFixed(1)+'" y="'+(H-9)+'" fill="#8fa3bc" font-size="10" font-family="IBM Plex Mono,monospace" text-anchor="middle">'+(m+1)+'</text>';
+    g+='<text x="'+((L+W-R)/2)+'" y="'+(H+1)+'" fill="#8fa3bc" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle" letter-spacing="1.5">MONTH</text>';
+
+    const wellPath=path(fo)+" L"+x(n-1).toFixed(1)+","+y0.toFixed(1)+" L"+x(0).toFixed(1)+","+y0.toFixed(1)+" Z";
+    g+='<path d="'+wellPath+'" fill="#e8202a" opacity="0.28" clip-path="url(#below)"/>';
+
+    const band=path(cb)+" "+fo.map((v,i)=>"L"+x(n-1-i).toFixed(1)+","+y(fo[n-1-i]).toFixed(1)).join(" ")+" Z";
+    g+='<path d="'+band+'" fill="#c4a35a" opacity="0.30" clip-path="url(#cp)"/>';
+
+    g+='<line x1="'+L+'" y1="'+y0.toFixed(1)+'" x2="'+(W-R)+'" y2="'+y0.toFixed(1)+'" stroke="#e8202a" stroke-width="1.5" stroke-dasharray="5 4"/>';
+    if(mode==="payout")
+      g+='<path d="'+path(cb)+'" fill="none" stroke="#c4a35a" stroke-width="1.6" opacity="0.85" clip-path="url(#cp)"/>';
+    g+='<path d="'+path(fo)+'" fill="none" stroke="#eef2f7" stroke-width="2.4" clip-path="url(#cp)"/>';
+
+    if(r.firstNeg){
+      const i=r.firstNeg-1, anchor=x(i)>W-210?"end":"start", dx=anchor==="end"?-7:7;
+      g+='<line x1="'+x(i).toFixed(1)+'" y1="'+Tp+'" x2="'+x(i).toFixed(1)+'" y2="'+(H-B)+'" stroke="#e8202a" stroke-width="1" opacity="0.5"/>';
+      g+='<text x="'+(x(i)+dx).toFixed(1)+'" y="'+(Tp+13)+'" fill="#e8202a" font-size="10.5" font-family="IBM Plex Mono,monospace" text-anchor="'+anchor+'">rentals stop covering the bond, month '+r.firstNeg+'</text>';
+    }
+    svg.innerHTML='<title id="charttitle">Monthly net cash after debt service</title>'+g;
+  }
+
+  function render(){
+    const p={}; IDS.forEach(k=>p[k]=parseFloat($(k).value));
+    p.gdep=$("gdep").checked;
+    const fmt={veh:v=>v,acq:money,book:money,fin:money,rent:money,dep:money,term:v=>v+" months",
+      bondon:money,rate:pct,ins:pct,trk:money,maint:money,admin:money,
+      def:pct,res:money,recdisc:pct,gret:pct,gpaid:pct,gper:v=>v+" months"};
+    IDS.forEach(k=>$("o-"+k).textContent=fmt[k](p[k]));
+
+    const r=model(p);
+    draw(r);
+
+    $("chart-note").textContent = mode==="compound"
+      ? "The mine is invisible here because it pays you nothing until you exit. Everything you see is the cars."
+      : "The gold band is what the mine hands you each month. If it is doing the lifting, you have one position, not two.";
+
+    const total=r.cumF+r.mineGain;
+    const absurd=r.terminal>r.placed*8;
+    $("verdict").className="verdict"+(absurd?" absurd":"");
+    $("v-total").textContent=short(total);
+    $("v-total").style.color = absurd||total<0 ? "var(--signal)" : "var(--paper)";
+    $("v-note").innerHTML = absurd
+      ? "This is not a forecast, it is a warning. Compounding "+pct(r.mr)+" a month for "+r.hold+" months turns <b>"+
+        short(r.placed)+"</b> into <b>"+short(r.terminal)+"</b>. If that were achievable you would not be buying Polos. You would put every rand you own and every rand you could borrow into the mine and never think about cars again. You are not doing that, which tells you the rate does not hold for "+r.hold+" months. Find how many months it does hold for and set the slider there."
+      : "Of that, <b>"+short(r.cumF)+"</b> comes from the cars and <b>"+short(r.mineGain)+"</b> from the mine. The cars are "+
+        (total!==0?Math.round(r.cumF/total*100):0)+"% of what you make and 100% of what the bank has security over.";
+
+    const dscrOK=r.dscrFleet!==null&&r.dscrFleet>=1.20;
+    const k=[
+      ["Cars alone, return a year", r.aIRR===null?"n/a":pct(r.aIRR), "", "Unlevered. No borrowing, no mine."],
+      ["Rentals cover the bond until", r.firstNeg?("month "+r.firstNeg):"the end", r.firstNeg?"":"pass", r.firstNeg?"Then they stop.":"They never stop covering it."],
+      ["Cash you must find", r.negSum<0?short(-r.negSum):"R0", r.negSum<0?"fail":"pass", "Total of every month the rentals fall short."],
+      ["Deepest hole", r.gap<0?short(-r.gap):"R0", r.gap<0?"fail":"pass", "Worst run of shortfalls, back to back."],
+      ["Cars alone, cover at month "+r.probe, r.dscrFleet===null?"n/a":r.dscrFleet.toFixed(2)+"x", dscrOK?"pass":"fail", "A credit committee wants 1.20x."],
+      ["Cars alone, net over the term", short(r.cumF), r.cumF>0?"pass":"fail", "After the bond is paid."],
+      ["Your cost per car, month 1", money(r.service/p.veh+r.opex1), "", "Bond "+money(r.service/p.veh)+" + insurance "+money(p.book*p.ins/12)+" + tracker "+money(p.trk)+(p.maint+p.admin>0?" + "+money(p.maint+p.admin):"")+"."],
+      ["Your margin per car, month 1", money(p.rent-r.service/p.veh-r.opex1), (p.rent-r.service/p.veh-r.opex1)>0?"pass":"fail", "Rental less every cost line."],
+      ["Placed in the mine", short(r.placed), "mine", p.gdep?"Cash back plus deposits.":"Cash back only."],
+      ["Mine value when you exit", short(r.terminal), "mine", mode==="compound"?("At "+pct(r.mr)+" a month for "+r.hold+" months."):"Capital stays intact."],
+      ["Mine gain", short(r.mineGain), r.mineGain>0?"mine":"fail", "Value at exit less what you put in."],
+      ["Cars surviving the term", r.survivors.toFixed(1)+" of "+p.veh, r.survivors<p.veh*0.7?"fail":"", "At "+pct(p.def)+" a year, compounded."],
+      ["Renter needs to earn", money(r.needIncome), "", "Net, on the one third rule."],
+      ["Same car at a bank", money(r.bankPay), "", "You are asking "+((p.rent/r.bankPay-1)*100).toFixed(0)+"% more."]
+    ];
+    $("kpis").innerHTML=k.map(a=>'<div class="kpi"><div class="k">'+a[0]+'</div><div class="n '+a[2]+'">'+a[1]+'</div><div class="m">'+a[3]+'</div></div>').join("");
+
+    const f=[];
+    if(absurd)
+      f.push(["bad","<b>The mine leg has broken the model.</b> "+short(r.placed)+" compounding at "+pct(r.mr)+" a month becomes "+short(r.terminal)+" in "+r.hold+" months. No mine does that. A 72% year is a plausible thing to have happened once, in a good production window. It is not a rate you extend for "+r.hold+" months. Pull the holding period back to 12 and treat everything after that as a fresh decision, not an assumption."]);
+
+    if(mode==="compound"&&r.negSum<0)
+      f.push(["bad","<b>The mine cannot help you here.</b> It compounds, so it hands you nothing until you exit. The rentals stop covering the bond at month "+r.firstNeg+" and you need "+short(-r.negSum)+" across the back end, "+short(-r.gap)+" of it back to back. That money has to come from the rest of the group, and the mine is where you sent your buffer."]);
+    else if(mode==="compound")
+      f.push(["ok","<b>The rentals carry the bond the whole way.</b> The cars never go under, so the mine can compound undisturbed. This is the version that works."]);
+
+    if(mode==="payout"&&r.cover>0.5)
+      f.push(["bad","<b>The mine is paying "+pct(r.cover)+" of the bond.</b> That is not diversification, it is one position. A bad two quarters in Harare and you lose the distributions, breach the vehicle facility, and are dumping repossessed Polos to cover it."]);
+
+    if(r.dscrFleet!==null&&r.dscrFleet<1.20)
+      f.push(["warn","<b>Cover is "+r.dscrFleet.toFixed(2)+"x at month "+r.probe+", against 1.20x.</b> You may still be cash positive there, but a credit committee tests the ratio, not your bank balance. Raise the rental, shorten the term, or borrow less per car."]);
+
+    if(p.gdep&&p.dep>0)
+      f.push(["warn","<b>You are locking "+money(r.deposits)+" of customer deposits into a compounding mine.</b> Only legitimate if that deposit is a non refundable initiation applied to the contract. If it is refundable it is a liability, roughly "+(p.veh-r.survivors).toFixed(0)+" of these customers default over the term, and you cannot pull it back out of Zimbabwe to pay them. Settle it in the rental agreement first."]);
+
+    if(p.bondon>p.acq)
+      f.push(["warn","<b>You are bonding "+money((p.bondon-p.acq)*p.veh)+" more than the cars cost.</b> Clean only if the funder knows your real buy price. "+money(p.bondon)+" against "+money(r.perCar)+" of contracted rentals is a "+pct(p.bondon/r.perCar)+" advance rate, which is conservative and defensible as receivables finance. Paper it that way, with the buy price on the face of it, and the R"+Math.round(p.bondon-p.acq).toLocaleString("en-ZA")+" a car stops being a problem."]);
+
+    if(p.bondon>p.book)
+      f.push(["bad","<b>Bonded above book.</b> "+money(p.bondon-p.book)+" per car more than the car is worth on day one. No funder advances over book against the asset."]);
+
+    if(r.needIncome>r.bankPay*3)
+      f.push(["warn","<b>Your renter needs "+money(r.needIncome)+" net to afford this,</b> and at that income a bank finances the same car at "+money(r.bankPay)+" a month. So your customer must earn over "+short(r.needIncome)+" and still be unable to get bank finance. Real, but thin. Test three cars before you commit to "+p.veh+"."]);
+
+    if(p.maint===0)
+      f.push(["bad","<b>You have not costed maintenance.</b> "+p.term+" months on a Polo means the back half is out of warranty and out of service plan, at rent to own mileage. Cambelt, clutch, tyres and services do not stop happening because the model has no line for them. Either that cost is the renter\u0027s under the agreement, which is a real structure and No Finance Cars runs it that way, or it is yours and it is missing. If it is the renter\u0027s, your residual assumption is too high, because nobody services a car they are still renting. Push the slider to R900 and see what it does."]);
+
+    if(p.admin===0)
+      f.push(["warn","<b>You have not costed collections and admin.</b> At "+pct(p.def)+" a year you are chasing arrears on "+(p.veh-r.survivors).toFixed(0)+" of these cars and repossessing them. That has a cost even though it sits in an existing team. R400 a car is a fair starting placeholder."]);
+
+    if(p.term>60)
+      f.push(["warn","<b>"+p.term+" months on a used Polo.</b> It leaves warranty and service plan in the back half, which is why the maintenance slider matters more than any other here. At "+pct(p.def)+" a year only "+r.survivors.toFixed(0)+" of "+p.veh+" reach the end, and that erosion is exactly what pulls the rentals under the bond."]);
+
+    $("flags").innerHTML=f.map(a=>'<div class="flag '+a[0]+'"><div class="dot"></div><div class="txt">'+a[1]+'</div></div>').join("");
+  }
+
+  function seg(a,b,set){
+    const flip=(on,off,id)=>{set(id);$(on).setAttribute("aria-pressed","true");$(off).setAttribute("aria-pressed","false");render();};
+    $(a).addEventListener("click",()=>flip(a,b,a));
+    $(b).addEventListener("click",()=>flip(b,a,b));
+  }
+  seg("m-comp","m-pay",id=>mode=(id==="m-comp"?"compound":"payout"));
+  seg("b-nom","b-eff",id=>basis=(id==="b-nom"?"nominal":"effective"));
+  IDS.forEach(k=>$(k).addEventListener("input",render));
+  $("gdep").addEventListener("change",render);
+  render();
+})();
+</script>
+</body>
+</html>
